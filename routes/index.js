@@ -11,9 +11,22 @@ router.get('/', function(req, res, next) {
   res.render('index', { title: 'Backend' });
 });
 
-router.get('/products', async function(req, res, next) {
-  let response = await fetch(apis.stock + 'products');
-  res.json(await response.json());
+router.get('/api/products', async (req, res, next) => {
+  let url = `${apis.stock}/products?`;
+
+  let sort = req.query.sort || ''
+  let filter = req.query.filter || ''
+  let pagination = req.query.pagination || ''
+
+  url += 'sort=' + sort
+  url += '&filter=' + filter
+  url += '&pagination=' + pagination
+
+  console.log(url)
+
+  let response = await fetch(url);
+  let data = await response.json();
+  res.json(data);
 });
 
 module.exports = router;
