@@ -54,7 +54,7 @@ router.post('/buy', async (req, res) => {
   let product = await prodres.json();
   product = product.data
 
-  if (!(product.length > 0)) {
+  if (!product.id) {
     res.status(404).json({ 'message':'Product not found' });
     return
   }
