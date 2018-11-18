@@ -36,6 +36,7 @@ router.get('/products', async (req, res, next) => {
   res.json(data);
 });
 
+// Get product by id
 router.get('/products/:id', async (req, res, next) => {
   let id = req.params.id;
   let url = apis.stock + '/products/' + id;
@@ -44,6 +45,7 @@ router.get('/products/:id', async (req, res, next) => {
   res.json(data);
 });
 
+// Post new purchase. Required params idProd and quantity integers.
 router.post('/buy', async (req, res) => {
   let idprod = parseInt(req.body.productid);
   let quantity = parseInt(req.body.quantity);
