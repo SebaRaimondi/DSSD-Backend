@@ -2,6 +2,7 @@ var express = require('express');
 var router = express.Router();
 
 const fetch = require("node-fetch");
+const { URLSearchParams } = require('url');
 
 const apis = require('../apis.js');
 
@@ -42,5 +43,29 @@ router.get('/products/:id', async (req, res, next) => {
   let data = await response.json();
   res.json(data);
 });
+
+router.post('/buy', async (req, res) => {
+  let idprod = parseInt(req.body.productid);
+  let quantity = parseInt(req.body.quantity);
+
+  let prodres = await fetch(apis.stock + '/products/' + idprod);
+  let product = await prodres.json();
+  product = product.data
+
+  if (!(product.length > 0)) {
+    res.status(404).json({ 'message':'Product not found' });
+    return
+  }
+
+  const params = new URLSearchParams();
+  params.append('productid', product.id);
+  params.append('quantity', quantity);
+  params.append('date', new Date());
+  params.append('price', product.saleprice);
+  
+  let response = await fetch(apis.sales + '/sale/', { method: 'POST', body: params });
+  let data = await response.json();
+  res.json(data);
+})
 
 module.exports = router;
