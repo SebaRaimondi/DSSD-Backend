@@ -59,13 +59,31 @@ router.post('/buy', async (req, res) => {
     return
   }
 
-  const params = new URLSearchParams();
-  params.append('productid', product.id);
-  params.append('quantity', quantity);
-  params.append('date', new Date());
-  params.append('price', product.saleprice);
+  if (product.stock < quantity) {
+    res.status(500).json({ 'message':'Not enough stock to complete purchase' });
+    return
+  }
+
+  let saleparams = new URLSearchParams();
+  saleparams.append('productid', product.id);
+  saleparams.append('quantity', quantity);
+  saleparams.append('date', new Date());
+  saleparams.append('price', product.saleprice);
+
+
+  let prodparams = new URLSearchParams();
+  prodparams.append('name', product.name);
+  prodparams.append('costPrice', product.costprice);
+  prodparams.append('salePrice', product.saleprice);
+  prodparams.append('productType', product.producttype);
+  prodparams.append('stock', product.stock - quantity);
+
   
-  let response = await fetch(apis.sales + '/sale/', { method: 'POST', body: params });
+  let prodputres = await fetch(apis.stock + '/products/' + product.id, { method: 'PUT', body: prodparams });
+  let prodputdata = await prodputres.json();
+  console.log(prodputdata);
+
+  let response = await fetch(apis.sales + '/sale/', { method: 'POST', body: saleparams });
   let data = await response.json();
   res.json(data);
 })
