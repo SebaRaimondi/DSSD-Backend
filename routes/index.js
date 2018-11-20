@@ -45,7 +45,7 @@ router.get('/products/all', async (req, res, next) => {
   let response = await fetch(`${apis.stock}/products`);
   let data = await response.json();
 
-  handlePrices(data.data)
+  handlePrices(data.data, employee)
 
   res.json(data);
 });
