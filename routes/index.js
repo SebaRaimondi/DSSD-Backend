@@ -23,12 +23,43 @@ async function isEmployee(email) {
   return json.data.isEmployee
 }
 
-function handlePrices(products, isEmployee) {
-  products.forEach(prod => {
+function getTypeIds(products) {
+  let set = new Set(products.map(prod => { return prod.producttype }))
+  return [...set]
+}
+
+async function getTypes(products) {
+  let typeids = getTypeIds(products);
+  let promise = await Promise.all(typeids.map(async typeid => {
+    return fetch(apis.stock + '/productTypes/' + typeid)
+  }))
+  let jsons = await Promise.all(promise.map(async prom => {
+    return prom.json()
+  }))
+  let types = []
+  let pretypes = jsons.map(res => {
+    return res.data
+  });
+  pretypes.forEach(type => {
+    types[type.id] = type
+  });
+  return types
+}
+
+async function handlePrices(products, isEmployee) {
+  if (isEmployee) return products.forEach(prod => {
     prod.price = isEmployee ? prod.costprice : prod.saleprice
     delete prod.costprice
     delete prod.saleprice
   });
+}
+
+async function populateTypes(products) {
+  let types = await getTypes(products)
+  return products.forEach(prod => {
+    prod.type = types[prod.producttype]
+    delete prod.producttype
+  })
 }
 
 /* GET home page. */
@@ -44,8 +75,11 @@ router.get('/products/all', async (req, res, next) => {
 
   let response = await fetch(`${apis.stock}/products`);
   let data = await response.json();
+  let products = data.data
 
-  handlePrices(data.data, employee)
+  await populateTypes(products)
+
+  await handlePrices(products, employee)
 
   res.json(data);
 });
