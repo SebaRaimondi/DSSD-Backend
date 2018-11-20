@@ -79,6 +79,11 @@ async function populateTypes(products) {
   })
 }
 
+async function handleProducts(products, isEmployee) {
+  await populateTypes(products)
+  setPrices(products, isEmployee)
+}
+
 /* GET home page. */
 router.get('/', function(req, res, next) {
   res.render('index', { title: 'Backend' });
@@ -87,16 +92,13 @@ router.get('/', function(req, res, next) {
 // GET all products
 router.get('/products/all', async (req, res, next) => {
   let token = await handleToken(req.body.token)
-  let employee = false
-  if (token) employee = await isEmployee(token.email)
+  let employee = token ? await isEmployee(token.email) : false
 
   let response = await fetch(`${apis.stock}/products`);
   let data = await response.json();
   let products = data.data
 
-  await populateTypes(products)
-
-  await setPrices(products, employee)
+  await handleProducts(products, employee)
 
   res.json(data);
 });
