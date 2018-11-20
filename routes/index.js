@@ -23,6 +23,14 @@ async function isEmployee(email) {
   return json.data.isEmployee
 }
 
+function handlePrices(products, isEmployee) {
+  products.forEach(prod => {
+    prod.price = isEmployee ? prod.costprice : prod.saleprice
+    delete prod.costprice
+    delete prod.saleprice
+  });
+}
+
 /* GET home page. */
 router.get('/', function(req, res, next) {
   res.render('index', { title: 'Backend' });
@@ -36,6 +44,8 @@ router.get('/products/all', async (req, res, next) => {
 
   let response = await fetch(`${apis.stock}/products`);
   let data = await response.json();
+
+  handlePrices(data.data)
 
   res.json(data);
 });
