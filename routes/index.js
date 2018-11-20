@@ -46,11 +46,28 @@ async function getTypes(products) {
   return types
 }
 
-async function handlePrices(products, isEmployee) {
-  if (isEmployee) return products.forEach(prod => {
-    prod.price = isEmployee ? prod.costprice : prod.saleprice
-    delete prod.costprice
-    delete prod.saleprice
+function setEmployeePrice(prod) {
+    prod.price = prod.costprice.toFixed(2)
+}
+
+function calcPrice(prod) {
+  let margin = prod.saleprice - prod.costprice
+  if (prod.type.description == 'electro') return prod.price = (prod.costprice + margin/2).toFixed(2)
+  let costplusten = prod.costprice * 1.1
+  if (costplusten < prod.saleprice) return prod.price = (costplusten + (prod.saleprice - costplusten) * 0.2).toFixed(2)
+  return prod.price = prod.saleprice
+}
+
+function removePrices(prod) {
+  delete prod.costprice
+  delete prod.saleprice
+}
+
+function setPrices(products, isEmployee) {
+  let setPrice = isEmployee ? setEmployeePrice : calcPrice
+  products.forEach(prod => {
+    setPrice(prod)
+    removePrices(prod)
   });
 }
 
@@ -79,7 +96,7 @@ router.get('/products/all', async (req, res, next) => {
 
   await populateTypes(products)
 
-  await handlePrices(products, employee)
+  await setPrices(products, employee)
 
   res.json(data);
 });
