@@ -6,6 +6,15 @@ const { URLSearchParams } = require('url');
 
 const apis = require('../apis.js');
 
+async function handleToken(token) {
+  if (!token) return false;
+  let verifyparams = new URLSearchParams();
+  verifyparams.append('token', token);
+
+  let payload = await fetch(apis.users + '/verify', { method: 'POST', body: verifyparams })
+  payload = await payload.json()
+  return payload.success ? payload.decoded : false
+}
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
@@ -14,8 +23,11 @@ router.get('/', function(req, res, next) {
 
 // GET all products
 router.get('/products/all', async (req, res, next) => {
+  let token = await handleToken(req.body.token)
+
   let response = await fetch(`${apis.stock}/products`);
   let data = await response.json();
+
   res.json(data);
 });
 
