@@ -94,4 +94,18 @@ router.post('/buy', async (req, res) => {
   res.json(data);
 })
 
+router.post('/login', async (req, res, next) => {
+  let email = req.body.email
+  let pass = req.body.pass
+
+  if (!email || !pass) return res.status(500).json({ message: 'Check request', success: false })
+
+  let loginparams = new URLSearchParams();
+  loginparams.append('email', email);
+  loginparams.append('pass', pass);
+
+  let response = await fetch(apis.users + '/login', { method: 'POST', body: loginparams });
+  res.status(200).json(await response.json())
+});
+
 module.exports = router;
