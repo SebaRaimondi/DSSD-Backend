@@ -64,7 +64,7 @@ router.post('/buy', async (req, res) => {
     return
   }
 
-  if (!coupon.id) {
+  if (coupnum && !coupon) {
     res.status(404).json({ 'message':'Coupon not found' });
     return
   }
@@ -74,11 +74,13 @@ router.post('/buy', async (req, res) => {
     return
   }
 
+  let price = coupnum ? product.saleprice - product.saleprice * coupon.discount_percentage / 100 : product.saleprice
+
   let saleparams = new URLSearchParams();
   saleparams.append('productid', product.id);
   saleparams.append('quantity', quantity);
   saleparams.append('date', new Date());
-  saleparams.append('price', product.saleprice - product.saleprice * coupon.discount_percentage / 100);
+  saleparams.append('price', price);
 
 
   let prodparams = new URLSearchParams();
