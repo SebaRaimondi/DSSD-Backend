@@ -66,7 +66,7 @@ router.post('/buy', async (req, res) => {
 
   if (coupnum && !coupon) return res.status(404).json({ 'message':'Coupon not found' });
 
-  if (product.stock < quantity) return res.status(500).json({ 'message':'Not enough stock to complete purchase' });
+  //  if (product.stock < quantity) return res.status(500).json({ 'message':'Not enough stock to complete purchase' });
 
   let price = coupnum ? product.saleprice - product.saleprice * coupon.discount_percentage / 100 : product.saleprice
 
@@ -86,6 +86,8 @@ router.post('/buy', async (req, res) => {
   let prodputres = await fetch(apis.stock + '/products/' + product.id, { method: 'PUT', body: prodparams });
   let prodputdata = await prodputres.json();
   console.log(prodputdata);
+  
+  if (!(prodputdata.status == 'success')) return res.status(500).json({ 'message':'Not enough stock' })
 
   let response = await fetch(apis.sales + '/sale/', { method: 'POST', body: saleparams });
   let data = await response.json();
