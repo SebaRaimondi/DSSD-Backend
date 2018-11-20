@@ -105,6 +105,9 @@ router.get('/products/all', async (req, res, next) => {
 
 // GET products with filter, sort or pagination
 router.get('/products', async (req, res, next) => {
+  let token = await handleToken(req.body.token)
+  let employee = token ? await isEmployee(token.email) : false
+
   let url = `${apis.stock}/products?`;
 
   let sort = req.query.sort || ''
@@ -117,15 +120,26 @@ router.get('/products', async (req, res, next) => {
 
   let response = await fetch(url);
   let data = await response.json();
+
+  let products = data.data
+  await handleProducts(products, employee)
+
   res.json(data);
 });
 
 // Get product by id
 router.get('/products/:id', async (req, res, next) => {
+  let token = await handleToken(req.body.token)
+  let employee = token ? await isEmployee(token.email) : false
+
   let id = req.params.id;
   let url = apis.stock + '/products/' + id;
   let response = await fetch(url);
   let data = await response.json();
+
+  let product = data.data
+  await handleProducts([product], employee)
+
   res.json(data);
 });
 
