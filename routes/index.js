@@ -49,13 +49,23 @@ router.get('/products/:id', async (req, res, next) => {
 router.post('/buy', async (req, res) => {
   let idprod = parseInt(req.body.productid);
   let quantity = parseInt(req.body.quantity);
+  let coupnum = parseInt(req.body.coupon);
 
-  let prodres = await fetch(apis.stock + '/products/' + idprod);
-  let product = await prodres.json();
-  product = product.data
+  let prodprom = fetch(apis.stock + '/products/' + idprod)
+  let coupprom = fetch(apis.coupons + '/coupons/number/' + coupnum)
+
+  let [prodres, coupres] = await Promise.all([prodprom, coupprom])
+  let [proddata, coupdata] = await Promise.all([prodres.json(), coupres.json()])
+  let product = proddata.data
+  let coupon = coupdata.data
 
   if (!product.id) {
     res.status(404).json({ 'message':'Product not found' });
+    return
+  }
+
+  if (!coupon.id) {
+    res.status(404).json({ 'message':'Coupon not found' });
     return
   }
 
@@ -68,7 +78,7 @@ router.post('/buy', async (req, res) => {
   saleparams.append('productid', product.id);
   saleparams.append('quantity', quantity);
   saleparams.append('date', new Date());
-  saleparams.append('price', product.saleprice);
+  saleparams.append('price', product.saleprice - product.saleprice * coupon.discount_percentage / 100);
 
 
   let prodparams = new URLSearchParams();
