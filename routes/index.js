@@ -16,6 +16,13 @@ async function handleToken(token) {
   return payload.success ? payload.decoded : false
 }
 
+async function isEmployee(email) {
+  if (!email) return false
+  let response = await fetch(apis.staff + '/isEmployee/' + email)
+  let json = await response.json()
+  return json.data.isEmployee
+}
+
 /* GET home page. */
 router.get('/', function(req, res, next) {
   res.render('index', { title: 'Backend' });
@@ -24,6 +31,8 @@ router.get('/', function(req, res, next) {
 // GET all products
 router.get('/products/all', async (req, res, next) => {
   let token = await handleToken(req.body.token)
+  let employee = false
+  if (token) employee = await isEmployee(token.email)
 
   let response = await fetch(`${apis.stock}/products`);
   let data = await response.json();
