@@ -208,4 +208,14 @@ router.post('/login', async (req, res, next) => {
   res.status(200).json(await response.json())
 });
 
+router.get('/coupon/:number', async (req, res, next) => {
+  let number = parseInt(req.params.number)
+  if (!number) return res.status(500).json({ message: 'Invalid request', success: false })
+
+  let response = await fetch(apis.coupons + '/coupons/number/' + number)
+  let coupon = await response.json()
+
+  res.json(coupon)
+})
+
 module.exports = router;
