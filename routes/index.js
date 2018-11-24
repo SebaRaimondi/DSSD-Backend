@@ -7,16 +7,8 @@ const { URLSearchParams } = require('url');
 const apis = require('../apis.js');
 
 const Coupon = require('../models/Coupon.js')
-
-async function handleToken(token) {
-  if (!token) return false;
-  let verifyparams = new URLSearchParams();
-  verifyparams.append('token', token);
-
-  let payload = await fetch(apis.users + '/verify', { method: 'POST', body: verifyparams })
-  payload = await payload.json()
-  return payload.success ? payload.decoded : false
-}
+const Token = require('../models/Token.js')
+const User = require('../models/User.js')
 
 async function isEmployee(email) {
   if (!email) return false
@@ -93,7 +85,7 @@ router.get('/', function(req, res, next) {
 
 // GET all products
 router.get('/products/all', async (req, res, next) => {
-  let token = await handleToken(req.body.token)
+  let token = await Token.verify(req.body.token)
   let employee = token ? await isEmployee(token.email) : false
 
   let response = await fetch(`${apis.stock}/products`);
@@ -107,7 +99,7 @@ router.get('/products/all', async (req, res, next) => {
 
 // GET products with filter, sort or pagination
 router.get('/products', async (req, res, next) => {
-  let token = await handleToken(req.body.token)
+  let token = await Token.verify(req.body.token)
   let employee = token ? await isEmployee(token.email) : false
 
   let url = `${apis.stock}/products?`;
@@ -131,7 +123,7 @@ router.get('/products', async (req, res, next) => {
 
 // Get product by id
 router.get('/products/:id', async (req, res, next) => {
-  let token = await handleToken(req.body.token)
+  let token = await Token.verify(req.body.token)
   let employee = token ? await isEmployee(token.email) : false
 
   let id = req.params.id;
@@ -147,7 +139,7 @@ router.get('/products/:id', async (req, res, next) => {
 
 // Post new purchase. Required params idProd and quantity integers.
 router.post('/buy', async (req, res) => {
-  let token = await handleToken(req.body.token)
+  let token = await Token.verify(req.body.token)
   let employee = token ? await isEmployee(token.email) : false
 
   let idprod = parseInt(req.body.productid);
@@ -206,16 +198,12 @@ router.post('/login', async (req, res, next) => {
 
   if (!email || !pass) return res.status(500).json({ message: 'Check request', success: false })
 
-  let loginparams = new URLSearchParams();
-  loginparams.append('email', email);
-  loginparams.append('pass', pass);
-
-  let response = await fetch(apis.users + '/login', { method: 'POST', body: loginparams });
-  res.status(200).json(await response.json())
+  res.json(await User.rawLogin(email, pass))
 });
 
 router.get('/coupon/:number', async (req, res, next) => {
   let number = parseInt(req.params.number)
+
   if (!number) return res.status(500).json({ message: 'Invalid request', success: false })
 
   res.json(await Coupon.rawGetByNumber(number))
