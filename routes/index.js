@@ -114,7 +114,7 @@ router.get('/products/all', async (req, res, next) => {
 
 // GET products with filter, sort or pagination
 router.get('/products', async (req, res, next) => {
-  let token = await handleToken(req.body.token)
+  let token = await handleToken(req.query.token)
   let employee = token ? await isEmployee(token.email) : false
 
   let url = `${apis.stock}/products?`;
