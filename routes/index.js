@@ -6,16 +6,10 @@ const { URLSearchParams } = require('url');
 
 const apis = require('../apis.js');
 
-const Coupon = require('../models/Coupon.js')
-const Token = require('../models/Token.js')
-const User = require('../models/User.js')
-
-async function isEmployee(email) {
-  if (!email) return false
-  let response = await fetch(apis.staff + '/isEmployee/' + email)
-  let json = await response.json()
-  return json.data.isEmployee
-}
+const Coupon = require('../models/Coupon.js');
+const Token = require('../models/Token.js');
+const User = require('../models/User.js');
+const Employee = require('../models/Employee.js');
 
 function getTypeIds(products) {
   let set = new Set(products.map(prod => { return prod.producttype }))
@@ -86,7 +80,7 @@ router.get('/', function(req, res, next) {
 // GET all products
 router.get('/products/all', async (req, res, next) => {
   let token = await Token.verify(req.body.token)
-  let employee = token ? await isEmployee(token.email) : false
+  let employee = await Employee.isEmployee(token.email)
 
   let response = await fetch(`${apis.stock}/products`);
   let data = await response.json();
@@ -100,7 +94,7 @@ router.get('/products/all', async (req, res, next) => {
 // GET products with filter, sort or pagination
 router.get('/products', async (req, res, next) => {
   let token = await Token.verify(req.body.token)
-  let employee = token ? await isEmployee(token.email) : false
+  let employee = await Employee.isEmployee(token.email)
 
   let url = `${apis.stock}/products?`;
 
@@ -124,7 +118,7 @@ router.get('/products', async (req, res, next) => {
 // Get product by id
 router.get('/products/:id', async (req, res, next) => {
   let token = await Token.verify(req.body.token)
-  let employee = token ? await isEmployee(token.email) : false
+  let employee = await Employee.isEmployee(token.email)
 
   let id = req.params.id;
   let url = apis.stock + '/products/' + id;
@@ -140,7 +134,7 @@ router.get('/products/:id', async (req, res, next) => {
 // Post new purchase. Required params idProd and quantity integers.
 router.post('/buy', async (req, res) => {
   let token = await Token.verify(req.body.token)
-  let employee = token ? await isEmployee(token.email) : false
+  let employee = await Employee.isEmployee(token.email)
 
   let idprod = parseInt(req.body.productid);
   let quantity = parseInt(req.body.quantity);
