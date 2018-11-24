@@ -84,6 +84,15 @@ async function handleProducts(products, isEmployee) {
   setPrices(products, isEmployee)
 }
 
+function markAsUsed(coupon) {
+  let params = new URLSearchParams();
+  params.append('number', coupon.number);
+  params.append('used', '1');
+  params.append('discount_percentage', coupon.discount_percentage);
+
+  fetch(apis.coupons + '/coupons/' + coupon.id, { method: 'PUT', body: params });
+}
+
 /* GET home page. */
 router.get('/', function(req, res, next) {
   res.render('index', { title: 'Backend' });
@@ -165,7 +174,11 @@ router.post('/buy', async (req, res) => {
 
   if (!product.id) return res.status(404).json({ 'message':'Product not found' });
 
-  if (coupnum && !coupon) return res.status(404).json({ 'message':'Coupon not found' });
+  if (coupnum) {
+    if (!coupon) return res.status(404).json({ 'message':'Coupon not found' });
+    if (parseInt(coupon.used)) return res.status(500).json({ message:'Coupon has already been used', success: false })
+    markAsUsed(coupon)
+  }
 
   let prodparams = new URLSearchParams();
   prodparams.append('name', product.name);
