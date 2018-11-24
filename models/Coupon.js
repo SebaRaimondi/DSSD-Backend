@@ -3,13 +3,6 @@ const fetch = require("node-fetch");
 const { URLSearchParams } = require('url');
 
 class Coupon {
-    constructor(id, number, used, discount_percentage) {
-        this.id = id;
-        this.number = number;
-        this.used = used;
-        this.discount_percentage = discount_percentage;
-    }
-
     static buildOne(json) {
         return Object.assign(new Coupon, json)
     }
