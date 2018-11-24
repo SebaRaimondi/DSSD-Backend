@@ -10,6 +10,7 @@ const Coupon = require('../models/Coupon.js');
 const Token = require('../models/Token.js');
 const User = require('../models/User.js');
 const Employee = require('../models/Employee.js');
+const Product = require('../models/Product.js');
 
 function getTypeIds(products) {
   let set = new Set(products.map(prod => { return prod.producttype }))
@@ -80,55 +81,42 @@ router.get('/', function(req, res, next) {
 // GET all products
 router.get('/products/all', async (req, res, next) => {
   let token = await Token.verify(req.body.token)
-  let employee = await Employee.isEmployee(token.email)
+  let isEmployee = await Employee.isEmployee(token.email)
 
-  let response = await fetch(`${apis.stock}/products`);
-  let data = await response.json();
-  let products = data.data
+  let response = await Product.rawGetAll()
+  response.data = await Product.buildManyWithPrices(response.data, isEmployee)
 
-  await handleProducts(products, employee)
-
-  res.json(data);
+  res.json(response);
 });
 
 // GET products with filter, sort or pagination
 router.get('/products', async (req, res, next) => {
   let token = await Token.verify(req.body.token)
-  let employee = await Employee.isEmployee(token.email)
-
-  let url = `${apis.stock}/products?`;
+  let isEmployee = await Employee.isEmployee(token.email)
 
   let sort = req.query.sort || ''
   let filter = req.query.filter || ''
   let pagination = req.query.pagination || ''
 
-  url += 'sort=' + sort
-  url += '&filter=' + filter
-  url += '&pagination=' + pagination
+  let response = await Product.rawGetCustom(sort, filter, pagination)
+  response.data = await Product.buildManyWithPrices(response.data, isEmployee)
 
-  let response = await fetch(url);
-  let data = await response.json();
+  res.json(response);
 
-  let products = data.data
-  await handleProducts(products, employee)
-
-  res.json(data);
 });
 
 // Get product by id
 router.get('/products/:id', async (req, res, next) => {
   let token = await Token.verify(req.body.token)
-  let employee = await Employee.isEmployee(token.email)
+  let isEmployee = await Employee.isEmployee(token.email)
 
   let id = req.params.id;
-  let url = apis.stock + '/products/' + id;
-  let response = await fetch(url);
-  let data = await response.json();
 
-  let product = data.data
-  await handleProducts([product], employee)
+  let response = await Product.rawGetOne(id)
+  response.data = await Product.buildOneWithPrices(response.data, isEmployee)
 
-  res.json(data);
+  res.json(response);
+
 });
 
 // Post new purchase. Required params idProd and quantity integers.
