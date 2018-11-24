@@ -6,6 +6,8 @@ const { URLSearchParams } = require('url');
 
 const apis = require('../apis.js');
 
+const Coupon = require('../models/Coupon.js')
+
 async function handleToken(token) {
   if (!token) return false;
   let verifyparams = new URLSearchParams();
@@ -82,15 +84,6 @@ async function populateTypes(products) {
 async function handleProducts(products, isEmployee) {
   await populateTypes(products)
   setPrices(products, isEmployee)
-}
-
-function markAsUsed(coupon) {
-  let params = new URLSearchParams();
-  params.append('number', coupon.number);
-  params.append('used', '1');
-  params.append('discount_percentage', coupon.discount_percentage);
-
-  fetch(apis.coupons + '/coupons/' + coupon.id, { method: 'PUT', body: params });
 }
 
 /* GET home page. */
@@ -170,14 +163,14 @@ router.post('/buy', async (req, res) => {
   let [prodres, coupres] = await Promise.all([prodprom, coupprom])
   let [proddata, coupdata] = await Promise.all([prodres.json(), coupres.json()])
   let product = proddata.data
-  let coupon = coupdata.data
+  let coupon = await Coupon.getByNumber(coupnum)
 
   if (!product.id) return res.status(404).json({ 'message':'Product not found' });
 
   if (coupnum) {
     if (!coupon) return res.status(404).json({ 'message':'Coupon not found' });
-    if (parseInt(coupon.used)) return res.status(500).json({ message:'Coupon has already been used', success: false })
-    markAsUsed(coupon)
+    if (coupon.isUsed()) return res.status(500).json({ message:'Coupon has already been used', success: false })
+    coupon.use()
   }
 
   let prodparams = new URLSearchParams();
@@ -225,10 +218,7 @@ router.get('/coupon/:number', async (req, res, next) => {
   let number = parseInt(req.params.number)
   if (!number) return res.status(500).json({ message: 'Invalid request', success: false })
 
-  let response = await fetch(apis.coupons + '/coupons/number/' + number)
-  let coupon = await response.json()
-
-  res.json(coupon)
+  res.json(await Coupon.rawGetByNumber(number))
 })
 
 module.exports = router;
