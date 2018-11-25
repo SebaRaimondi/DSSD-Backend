@@ -122,52 +122,39 @@ router.get('/products/:id', async (req, res, next) => {
 // Post new purchase. Required params idProd and quantity integers.
 router.post('/buy', async (req, res) => {
   let token = await Token.verify(req.body.token)
-  let employee = await Employee.isEmployee(token.email)
+  let isEmployee = await Employee.isEmployee(token.email)
 
   let idprod = parseInt(req.body.productid);
   let quantity = parseInt(req.body.quantity);
   let coupnum = parseInt(req.body.coupon);
 
-  if (!idprod) return res.status(400).json({ 'message':'No product received, check request' })
-  if (!quantity) return res.status(400).json({ 'message':'No quantity received, check request' })
+  if (!idprod) return res.status(400).json({ 'message':'No product received, check request', success: false })
+  if (!quantity) return res.status(400).json({ 'message':'No quantity received, check request', success: false })
+  if (coupnum && isEmployee) return res.status(500).json({ message:'Employees cant use coupons', success: false })
 
-  let prodprom = fetch(apis.stock + '/products/' + idprod)
-  let coupprom = fetch(apis.coupons + '/coupons/number/' + coupnum)
+  let [product, coupon] = await Promise.all([Product.getOne(idprod, isEmployee), Coupon.getByNumber(coupnum)])
 
-  let [prodres, coupres] = await Promise.all([prodprom, coupprom])
-  let [proddata, coupdata] = await Promise.all([prodres.json(), coupres.json()])
-  let product = proddata.data
-  let coupon = await Coupon.getByNumber(coupnum)
-
-  if (!product.id) return res.status(404).json({ 'message':'Product not found' });
-
+  if (!product) return res.status(404).json({ 'message':'Product not found' });
   if (coupnum) {
-    if (!coupon) return res.status(404).json({ 'message':'Coupon not found' });
-    if (coupon.isUsed()) return res.status(500).json({ message:'Coupon has already been used', success: false })
+    if (!coupon) return res.status(404).json({ 'message':'Coupon not found', success: false });
+    if (coupon.isUsed) return res.status(500).json({ message:'Coupon has already been used', success: false })
+
     coupon.use()
+    product.applyDiscount(coupon.discount_percentage)
   }
 
-  let prodparams = new URLSearchParams();
-  prodparams.append('name', product.name);
-  prodparams.append('costPrice', product.costprice);
-  prodparams.append('salePrice', product.saleprice);
-  prodparams.append('productType', product.producttype);
-  prodparams.append('stock', product.stock - quantity);
+  let put = await product.decreaseStockBy(quantity)
 
-  let prodputres = await fetch(apis.stock + '/products/' + product.id, { method: 'PUT', body: prodparams });
-  let prodputdata = await prodputres.json();
-
-  await handleProducts([product], employee)
-
-  let price = !employee && coupnum ? product.price - product.price * coupon.discount_percentage / 100 : product.price 
+  if (!put.status == 'success') {
+    if (coupnum) coupon.unUse()
+    return res.json(put)
+  }
 
   let saleparams = new URLSearchParams();
   saleparams.append('productid', product.id);
   saleparams.append('quantity', quantity);
   saleparams.append('date', new Date());
-  saleparams.append('price', price);
-
-  if (!(prodputdata.status == 'success')) return res.status(500).json({ 'message':'Not enough stock' })
+  saleparams.append('price', product.price);
 
   let response = await fetch(apis.sales + '/sale/', { method: 'POST', body: saleparams });
   let data = await response.json();

@@ -97,6 +97,20 @@ class Product {
         return fetch(apis.stock + '/products/' + id)
             .then(res => res.json())
     }
+
+    static getOne(id, isEmployee) {
+        return Product.rawGetOne(id)
+            .then(json => json.data.id ? this.buildOneWithPrices(json.data, isEmployee) : false)
+    }
+
+    applyDiscount(discount) {
+        this.price = (this.price - this.price * discount/100).toFixed(2)
+    }
+
+    decreaseStockBy(quantity) {
+        return fetch(apis.stock + '/products/' + this.id + '/reduceStock/' + quantity, { method: 'PUT' })
+            .then(res => res.json())
+    }
 }
 
 module.exports = Product
