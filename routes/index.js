@@ -106,4 +106,14 @@ router.get('/coupon/:number', async (req, res, next) => {
   res.json(await Coupon.rawGetByNumber(number))
 })
 
+router.get('/isEmployee/', async (req, res, next) => {
+  if (!req.header('token')) return res.status(500).json({ message: 'No token received', success: false })
+  let token = await Token.verify(req.header('token'))
+  if (!token) return res.status(500).json({ message: 'Invalid token', success: false })
+
+  let isEmployee = await Employee.isEmployee(token.email)
+  if (!isEmployee) return res.status(500).json({ email: token.email, message:'Token email is not an employee email', success: false })
+  return res.status(200).json({ email: token.email, message: 'Token email is an employee email', success: true })
+})
+
 module.exports = router;
