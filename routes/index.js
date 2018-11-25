@@ -11,6 +11,7 @@ const Token = require('../models/Token.js');
 const User = require('../models/User.js');
 const Employee = require('../models/Employee.js');
 const Product = require('../models/Product.js');
+const Sale = require('../models/Sale.js');
 
 function getTypeIds(products) {
   let set = new Set(products.map(prod => { return prod.producttype }))
@@ -150,15 +151,8 @@ router.post('/buy', async (req, res) => {
     return res.json(put)
   }
 
-  let saleparams = new URLSearchParams();
-  saleparams.append('productid', product.id);
-  saleparams.append('quantity', quantity);
-  saleparams.append('date', new Date());
-  saleparams.append('price', product.price);
-
-  let response = await fetch(apis.sales + '/sale/', { method: 'POST', body: saleparams });
-  let data = await response.json();
-  res.json(data);
+  let sale = await Sale.generate(product, quantity)
+  res.status(200).json({ message:'Success', data: sale, success: true })
 })
 
 router.post('/login', async (req, res, next) => {
