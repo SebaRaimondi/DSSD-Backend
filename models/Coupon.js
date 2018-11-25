@@ -3,6 +3,10 @@ const fetch = require("node-fetch");
 const { URLSearchParams } = require('url');
 
 class Coupon {
+    get isUsed() {
+        return this.used == '1'
+    }
+
     static buildOne(json) {
         return Object.assign(new Coupon, json)
     }
@@ -27,8 +31,13 @@ class Coupon {
         return fetch(apis.coupons + '/coupons/' + this.id, { method: 'PUT', body: params });
     }
 
-    isUsed() {
-        return this.used == '1'
+    unUse() {
+        let params = new URLSearchParams();
+        params.append('number', this.number);
+        params.append('used', '0');
+        params.append('discount_percentage', this.discount_percentage);
+
+        return fetch(apis.coupons + '/coupons/' + this.id, { method: 'PUT', body: params });
     }
 }
 
