@@ -13,67 +13,6 @@ const Employee = require('../models/Employee.js');
 const Product = require('../models/Product.js');
 const Sale = require('../models/Sale.js');
 
-function getTypeIds(products) {
-  let set = new Set(products.map(prod => { return prod.producttype }))
-  return [...set]
-}
-
-async function getTypes(products) {
-  let typeids = getTypeIds(products);
-  let promise = await Promise.all(typeids.map(async typeid => {
-    return fetch(apis.stock + '/productTypes/' + typeid)
-  }))
-  let jsons = await Promise.all(promise.map(async prom => {
-    return prom.json()
-  }))
-  let types = []
-  let pretypes = jsons.map(res => {
-    return res.data
-  });
-  pretypes.forEach(type => {
-    types[type.id] = type
-  });
-  return types
-}
-
-function setEmployeePrice(prod) {
-    prod.price = prod.costprice.toFixed(2)
-}
-
-function calcPrice(prod) {
-  let margin = prod.saleprice - prod.costprice
-  if (prod.type.description == 'electro') return prod.price = (prod.costprice + margin/2).toFixed(2)
-  let costplusten = prod.costprice * 1.1
-  if (costplusten < prod.saleprice) return prod.price = (costplusten + (prod.saleprice - costplusten) * 0.2).toFixed(2)
-  return prod.price = prod.saleprice
-}
-
-function removePrices(prod) {
-  delete prod.costprice
-  delete prod.saleprice
-}
-
-function setPrices(products, isEmployee) {
-  let setPrice = isEmployee ? setEmployeePrice : calcPrice
-  products.forEach(prod => {
-    setPrice(prod)
-    removePrices(prod)
-  });
-}
-
-async function populateTypes(products) {
-  let types = await getTypes(products)
-  return products.forEach(prod => {
-    prod.type = types[prod.producttype]
-    delete prod.producttype
-  })
-}
-
-async function handleProducts(products, isEmployee) {
-  await populateTypes(products)
-  setPrices(products, isEmployee)
-}
-
 /* GET home page. */
 router.get('/', function(req, res, next) {
   res.render('index', { title: 'Backend' });
