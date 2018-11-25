@@ -1,11 +1,6 @@
 var express = require('express');
 var router = express.Router();
 
-const fetch = require("node-fetch");
-const { URLSearchParams } = require('url');
-
-const apis = require('../apis.js');
-
 const Coupon = require('../models/Coupon.js');
 const Token = require('../models/Token.js');
 const User = require('../models/User.js');
@@ -20,7 +15,7 @@ router.get('/', function(req, res, next) {
 
 // GET all products
 router.get('/products/all', async (req, res, next) => {
-  let token = await Token.verify(req.body.token)
+  let token = await Token.verify(req.header('token'))
   let isEmployee = await Employee.isEmployee(token.email)
 
   let response = await Product.rawGetAll()
@@ -31,7 +26,7 @@ router.get('/products/all', async (req, res, next) => {
 
 // GET products with filter, sort or pagination
 router.get('/products', async (req, res, next) => {
-  let token = await Token.verify(req.body.token)
+  let token = await Token.verify(req.header('token'))
   let isEmployee = await Employee.isEmployee(token.email)
 
   let sort = req.query.sort || ''
@@ -47,7 +42,7 @@ router.get('/products', async (req, res, next) => {
 
 // Get product by id
 router.get('/products/:id', async (req, res, next) => {
-  let token = await Token.verify(req.body.token)
+  let token = await Token.verify(req.header('token'))
   let isEmployee = await Employee.isEmployee(token.email)
 
   let id = req.params.id;
@@ -61,7 +56,7 @@ router.get('/products/:id', async (req, res, next) => {
 
 // Post new purchase. Required params idProd and quantity integers.
 router.post('/buy', async (req, res) => {
-  let token = await Token.verify(req.body.token)
+  let token = await Token.verify(req.header('token'))
   let isEmployee = await Employee.isEmployee(token.email)
 
   let idprod = parseInt(req.body.productid);
