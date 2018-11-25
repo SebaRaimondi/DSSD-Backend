@@ -113,7 +113,18 @@ router.get('/isEmployee/', async (req, res, next) => {
 
   let isEmployee = await Employee.isEmployee(token.email)
   if (!isEmployee) return res.status(500).json({ email: token.email, message:'Token email is not an employee email', success: false })
-  return res.status(200).json({ email: token.email, message: 'Token email is an employee email', success: true })
+  res.status(200).json({ email: token.email, message: 'Token email is an employee email', success: true })
+})
+
+router.get('/test', async (req, res, next) => {
+  let Bonita = require('../models/Bonita.js')
+
+  let bonita = await Bonita.login()
+
+  await bonita.setProcess()
+  await bonita.newCase()
+
+  res.status(200).json(bonita)
 })
 
 module.exports = router;
