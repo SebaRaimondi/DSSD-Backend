@@ -54,18 +54,34 @@ class Bonita {
     }
 
     getVariables(params) {
-        console.log(params)
     }
 
     postCase(params) {
-        return fetch(bonita + '/API/bpm/case', { headers: this.headers, method: 'POST', body: JSON.stringify({ processDefinitionId: this.process, variables: this.getVariables(params) }) })
+        return fetch(bonita + '/API/bpm/case', { headers: this.headers, method: 'POST', body: JSON.stringify({ processDefinitionId: this.process, variables: params }) })
             .then(res => res.json())
     }
 
-    async newCase(params = [] ) {
+    async newCase(params = []) {
         this.case = (await this.postCase(params)).id
     }
 
+    getContext() {
+        return fetch(bonita + '/API/bpm/case/' + this.case + '/context', { headers: this.headers })
+            .then(res => res.json())
+    }
+
+    // no mirar
+    async getProducts() {
+        let products
+        let res
+        while (!products) {
+            await new Promise(resolve => setTimeout(() => resolve('alksdnasd'), 100))
+            res = await fetch('http://localhost:8080/bonita/API/bpm/caseVariable/' + this.case + '/products', { headers: this.headers }).then(res => res.json())
+            if (res.value != 'null') products = res.value
+        }
+        return products
+    }
 }
+
 
 module.exports = Bonita

@@ -122,9 +122,22 @@ router.get('/test', async (req, res, next) => {
   let bonita = await Bonita.login()
 
   await bonita.setProcess()
-  await bonita.newCase()
 
-  res.status(200).json(bonita)
+  let employeetoken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6Imp1YW5wZXJlekBnbWFpbC5jb20iLCJpc0FkbWluIjpmYWxzZSwiaWF0IjoxNTQzMTg1ODM0fQ.We9eM72L5TlPZFRm-M-8jvYk7mgyhyFbsOSfBDBQuJ8"
+  let token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImFkbWluQGFkbWluLmNvbSIsImlzQWRtaW4iOmZhbHNlLCJpYXQiOjE1NDMxODg2Nzl9.RpfT0_TKgVy0XcV7djG-fyyvClZEWfx2QR8dVOcfnds"
+
+  let variables = [
+    {
+      name: "token",
+      value: token,
+    },
+  ]
+
+  await bonita.newCase(variables)
+
+  let json = await bonita.getProducts()
+  let products = JSON.parse(json)
+  res.status(200).json(products)
 })
 
 module.exports = router;
