@@ -46,7 +46,7 @@ class Bonita {
     getProcess() {
         return fetch(bonita + '/API/bpm/process?c=10&p=0', { headers: this.headers })
             .then(res => res.json())
-            .then(json => json[2])
+            .then(json => json.find(p => p.name == 'Pool Grupo 1'))
     }
 
     async setProcess() {
@@ -75,11 +75,28 @@ class Bonita {
         let products
         let res
         while (!products) {
-            await new Promise(resolve => setTimeout(() => resolve('alksdnasd'), 100))
+            await new Promise(resolve => setTimeout(() => resolve(), 100))
             res = await fetch('http://localhost:8080/bonita/API/bpm/caseVariable/' + this.case + '/products', { headers: this.headers }).then(res => res.json())
             if (res.value != 'null') products = res.value
         }
         return products
+    }
+
+    // if params.token, price will change if token owner is an employee
+    // if params.productid, will return an array of only one product
+    static async completeGetProducts(params = {}) {
+        let variables = []
+
+        let bonita = await Bonita.login()
+
+        await bonita.setProcess()
+
+        if (params.token) variables.push({ name: 'token', value: params.token})
+        if (params.productid) variables.push({ name: 'productid', value: params.productid})
+
+        await bonita.newCase(variables)
+        let json = await bonita.getProducts()
+        return JSON.parse(json)
     }
 }
 
