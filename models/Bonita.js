@@ -90,14 +90,13 @@ class Bonita {
 
         let bonita = await Bonita.login()
 
-        await bonita.setProcess('Pool Grupo 1')
+        await bonita.setProcess('Productos')
 
         if (params.token) variables.push({ name: 'token', value: params.token})
-        if (params.productid) variables.push({ name: 'productid', value: params.productid})
 
         await bonita.newCase(variables)
-        let json = await bonita.getProducts()
-        return JSON.parse(json)
+
+        return bonita
     }
 
     static async completeSell(params = {}) {
@@ -105,7 +104,7 @@ class Bonita {
 
         let bonita = await Bonita.login()
 
-        await bonita.setProcess('Venta')
+        await bonita.setProcess('Venta3')
 
         if (!params.productid || !params.quantity) return false
 
@@ -118,14 +117,6 @@ class Bonita {
         await bonita.newCase(variables)
         
         return bonita
-        /*
-        if (params.token) variables.push({ name: 'token', value: params.token})
-        if (params.productid) variables.push({ name: 'productid', value: params.productid})
-
-        await bonita.newCase(variables)
-        let json = await bonita.getProducts()
-        return JSON.parse(json)
-        */
     }
 }
 
