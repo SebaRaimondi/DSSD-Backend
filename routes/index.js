@@ -134,8 +134,13 @@ router.get('/test', async (req, res, next) => {
     }
   ]
 
+  /*
   let products = await Bonita.completeGetProducts({})
   res.status(200).json(products)
+  */
+
+  let bonita = await Bonita.completeSell({ token: employeetoken, productid: 3, quantity: 1 })
+  console.log(bonita)
 })
 
 module.exports = router;

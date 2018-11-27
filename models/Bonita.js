@@ -43,17 +43,18 @@ class Bonita {
             .then(res => new Bonita(res))
     }
 
-    getProcess() {
+    getProcesses() {
         return fetch(bonita + '/API/bpm/process?c=10&p=0', { headers: this.headers })
             .then(res => res.json())
-            .then(json => json.find(p => p.name == 'Pool Grupo 1'))
+//            .then(json => json.find(p => p.name == 'Pool Grupo 1'))
     }
 
-    async setProcess() {
-        this.process = (await this.getProcess()).id
+    getProcess(name) {
+        return this.getProcesses().then(processes => processes.find(p => p.name == name))
     }
 
-    getVariables(params) {
+    async setProcess(name) {
+        this.process = (await this.getProcess(name)).id
     }
 
     postCase(params) {
@@ -89,7 +90,7 @@ class Bonita {
 
         let bonita = await Bonita.login()
 
-        await bonita.setProcess()
+        await bonita.setProcess('Pool Grupo 1')
 
         if (params.token) variables.push({ name: 'token', value: params.token})
         if (params.productid) variables.push({ name: 'productid', value: params.productid})
@@ -97,6 +98,34 @@ class Bonita {
         await bonita.newCase(variables)
         let json = await bonita.getProducts()
         return JSON.parse(json)
+    }
+
+    static async completeSell(params = {}) {
+        let variables = []
+
+        let bonita = await Bonita.login()
+
+        await bonita.setProcess('Venta')
+
+        if (!params.productid || !params.quantity) return false
+
+        variables.push({ name: 'productid', value: params.productid })
+        variables.push({ name: 'quantity', value: params.quantity })
+
+        if (params.token) variables.push({ name: 'token', value: params.token })
+        if (params.coupon) variables.push({ name: 'couponnum', value: params.coupon })
+
+        await bonita.newCase(variables)
+        
+        return bonita
+        /*
+        if (params.token) variables.push({ name: 'token', value: params.token})
+        if (params.productid) variables.push({ name: 'productid', value: params.productid})
+
+        await bonita.newCase(variables)
+        let json = await bonita.getProducts()
+        return JSON.parse(json)
+        */
     }
 }
 
