@@ -7,86 +7,64 @@ const User = require('../models/User.js');
 const Employee = require('../models/Employee.js');
 const Product = require('../models/Product.js');
 const Sale = require('../models/Sale.js');
+const Bonita = require('../models/Bonita.js')
+
+const resolvers = {}
+
+const setResolver = caseId => {
+  return new Promise((resolve, reject) => {
+    resolvers[caseId] = resolve
+  })
+}
+
+const resolve = caseId => resolvers[caseId];
+
+router.put('/resolve', function (req, res) {
+  resolve(req.headers.case)(req.body.res);
+  res.status(200).json({ message: 'ok' })
+});
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
   res.render('index', { title: 'Backend' });
 });
 
-// GET all products
-router.get('/products/all', async (req, res, next) => {
-  let token = await Token.verify(req.header('token'))
-  let isEmployee = await Employee.isEmployee(token.email)
-
-  let response = await Product.rawGetAll()
-  response.data = await Product.buildManyWithPrices(response.data, isEmployee)
-
-  res.json(response);
-});
-
-// GET products with filter, sort or pagination
+// GET products
 router.get('/products', async (req, res, next) => {
-  let token = await Token.verify(req.header('token'))
-  let isEmployee = await Employee.isEmployee(token.email)
+  let token = req.header('token')
+  let params = {}
+  if (token) params.token = token
 
-  let sort = req.query.sort || ''
-  let filter = req.query.filter || ''
-  let pagination = req.query.pagination || ''
-
-  let response = await Product.rawGetCustom(sort, filter, pagination)
-  response.data = await Product.buildManyWithPrices(response.data, isEmployee)
-
-  res.json(response);
-
-});
-
-// Get product by id
-router.get('/products/:id', async (req, res, next) => {
-  let token = await Token.verify(req.header('token'))
-  let isEmployee = await Employee.isEmployee(token.email)
-
-  let id = req.params.id;
-
-  let response = await Product.rawGetOne(id)
-  response.data = await Product.buildOneWithPrices(response.data, isEmployee)
-
-  res.json(response);
-
+  let bonita = await Bonita.completeGetProducts(params)
+  const response = await setResolver(bonita.case);
+  res.status(200).json(response)
 });
 
 // Post new purchase. Required params idProd and quantity integers.
 router.post('/buy', async (req, res) => {
-  let token = await Token.verify(req.header('token'))
-  let isEmployee = await Employee.isEmployee(token.email)
+  let token = req.header('token')
+  let idprod = Number(req.body.productid);
+  let quantity = Number(req.body.quantity);
+  let coupnum = Number(req.body.coupon);
 
-  let idprod = parseInt(req.body.productid);
-  let quantity = parseInt(req.body.quantity);
-  let coupnum = parseInt(req.body.coupon);
+  if (!req.body.productid) return res.status(400).json({ success: false, message: 'No productid received' })
+  if (!req.body.quantity) return res.status(400).json({ success: false, message: 'No quantity received' })
 
-  if (!idprod) return res.status(400).json({ 'message':'No product received, check request', success: false })
-  if (!quantity) return res.status(400).json({ 'message':'No quantity received, check request', success: false })
-  if (coupnum && isEmployee) return res.status(500).json({ message:'Employees cant use coupons', success: false })
+  if (!idprod) return res.status(400).json({ success: false, message: 'productid must be an integer' })
+  if (!quantity) return res.status(400).json({ success: false, message: 'quantity must be an integer' })
+  if (req.body.coupon && !coupnum) return res.status(400).json({ success: false, message: 'coupnum must be an integer or not present' })
 
-  let [product, coupon] = await Promise.all([Product.getOne(idprod, isEmployee), Coupon.getByNumber(coupnum)])
+  if (idprod < 1) return res.status(400).json({ success: false, message: 'productid must be 1 or higher' })
+  if (quantity < 1) return res.status(400).json({ success: false, message: 'quantity must be 1 or higher' })
 
-  if (!product) return res.status(404).json({ 'message':'Product not found' });
-  if (coupnum) {
-    if (!coupon) return res.status(404).json({ 'message':'Coupon not found', success: false });
-    if (coupon.isUsed) return res.status(500).json({ message:'Coupon has already been used', success: false })
+  let params = { productid: idprod, quantity: quantity}
 
-    coupon.use()
-    product.applyDiscount(coupon.discount_percentage)
-  }
+  if (token) params.token = token
+  if (coupnum) params.coupon = coupnum
 
-  let put = await product.decreaseStockBy(quantity)
-
-  if (!put.status == 'success') {
-    if (coupnum) coupon.unUse()
-    return res.json(put)
-  }
-
-  let sale = await Sale.generate(product, quantity)
-  res.status(200).json({ message:'Success', data: sale, success: true })
+  let bonita = await Bonita.completeSell(params)
+  const response = await setResolver(bonita.case);
+  res.status(200).json(response)
 })
 
 router.post('/login', async (req, res, next) => {
@@ -114,33 +92,6 @@ router.get('/isEmployee/', async (req, res, next) => {
   let isEmployee = await Employee.isEmployee(token.email)
   if (!isEmployee) return res.status(500).json({ email: token.email, message:'Token email is not an employee email', success: false })
   res.status(200).json({ email: token.email, message: 'Token email is an employee email', success: true })
-})
-
-router.get('/test', async (req, res, next) => {
-  let Bonita = require('../models/Bonita.js')
-
-  let employeetoken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6Imp1YW5wZXJlekBnbWFpbC5jb20iLCJpc0FkbWluIjpmYWxzZSwiaWF0IjoxNTQzMTg1ODM0fQ.We9eM72L5TlPZFRm-M-8jvYk7mgyhyFbsOSfBDBQuJ8"
-  let token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImFkbWluQGFkbWluLmNvbSIsImlzQWRtaW4iOmZhbHNlLCJpYXQiOjE1NDMxODg2Nzl9.RpfT0_TKgVy0XcV7djG-fyyvClZEWfx2QR8dVOcfnds"
-  let prodid = 2
-
-  let variables = [
-    {
-      name: "token",
-      value: token,
-    },
-    {
-      name: "productid",
-      value: 1
-    }
-  ]
-
-  /*
-  let products = await Bonita.completeGetProducts({})
-  res.status(200).json(products)
-  */
-
-  let bonita = await Bonita.completeSell({ token: employeetoken, productid: 3, quantity: 1 })
-  console.log(bonita)
 })
 
 module.exports = router;
