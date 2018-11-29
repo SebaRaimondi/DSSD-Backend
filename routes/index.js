@@ -42,22 +42,25 @@ router.get('/products', async (req, res, next) => {
 
 // Post new purchase. Required params idProd and quantity integers.
 router.post('/buy', async (req, res) => {
+  if (!req.body.productid) return res.status(400).json({ success: false, message: 'No productid received' })
+  if (!req.body.quantity) return res.status(400).json({ success: false, message: 'No quantity received' })
+  if (!req.body.caseid) return res.status(400).json({ success: false, message: 'No caseid received' })
+
   let token = req.header('token')
   let idprod = Number(req.body.productid);
   let quantity = Number(req.body.quantity);
   let coupnum = Number(req.body.coupon);
-
-  if (!req.body.productid) return res.status(400).json({ success: false, message: 'No productid received' })
-  if (!req.body.quantity) return res.status(400).json({ success: false, message: 'No quantity received' })
+  let listCaseId = Number(req.body.caseid);
 
   if (!idprod) return res.status(400).json({ success: false, message: 'productid must be an integer' })
   if (!quantity) return res.status(400).json({ success: false, message: 'quantity must be an integer' })
+  if (!listCaseId) return res.status(400).json({ success: false, message: 'quantity must be an integer' })
   if (req.body.coupon && !coupnum) return res.status(400).json({ success: false, message: 'coupnum must be an integer or not present' })
 
   if (idprod < 1) return res.status(400).json({ success: false, message: 'productid must be 1 or higher' })
   if (quantity < 1) return res.status(400).json({ success: false, message: 'quantity must be 1 or higher' })
 
-  let params = { productid: idprod, quantity: quantity}
+  let params = { productid: idprod, quantity: quantity, caseid: listCaseId }
 
   if (token) params.token = token
   if (coupnum) params.coupon = coupnum

@@ -106,10 +106,11 @@ class Bonita {
 
         await bonita.setProcess('Venta3')
 
-        if (!params.productid || !params.quantity) return false
+        if (!params.productid || !params.quantity || !params.caseid) return false
 
         variables.push({ name: 'productid', value: params.productid })
         variables.push({ name: 'quantity', value: params.quantity })
+        variables.push({ name: 'caseid', value: params.caseid })
 
         if (params.token) variables.push({ name: 'token', value: params.token })
         if (params.coupon) variables.push({ name: 'couponnum', value: params.coupon })
