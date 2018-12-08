@@ -7,12 +7,12 @@ class Employee {
     }
 
     static isEmployee(email) {
-        if (!email) return false
-        
+        if (!email) return false;
+
         return fetch(apis.staff + '/isEmployee/' + email)
             .then(res => res.json())
             .then(json => json.data.isEmployee)
     }
 }
 
-module.exports = Employee
+module.exports = Employee;

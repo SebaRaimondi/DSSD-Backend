@@ -7,7 +7,7 @@ class ProductType {
     }
 
     static getById(id) {
-        return fetch(apis.stock + '/productTypes/' + id)
+        return fetch(`${apis.stock}/productTypes/${id}`)
             .then(res => res.json())
             .then(json => json.data ? this.buildOne(json.data) : false)
     }
@@ -15,11 +15,11 @@ class ProductType {
     static getManyById(ids) {
         return Promise.all(ids.map(id => ProductType.getById(id)))
             .then(types => {
-                let arr = []
-                types.map(t => arr[t.id] = t)
+                let arr = [];
+                types.map(t => arr[t.id] = t);
                 return arr
             })
     }
 }
 
-module.exports = ProductType
+module.exports = ProductType;
